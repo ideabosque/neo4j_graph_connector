@@ -31,7 +31,7 @@ class Neo4jConnector(object):
     def driver(self, driver: object) -> object:
         self._driver = driver
 
-    def get_schema(self, database: str = "neo4j") -> Dict[str, Any]:
+    def get_graph_schema(self, database: str = "neo4j") -> Dict[str, Any]:
         """
         Generates the schema in the specified format, including:
         - Entities with attributes and relations
@@ -99,23 +99,23 @@ class Neo4jConnector(object):
             self.logger.error(log)
             raise e
 
-    def execute_query(
+    def execute_cypher_query(
         self,
-        query: str,
+        cypher_query: str,
         parameters: Optional[Dict[str, Any]] = None,
         database: str = "neo4j",
     ) -> List[Dict[str, Any]]:
         """
         Executes a Cypher query on the specified database and returns the results.
 
-        :param query: The Cypher query string
+        :param cypher_query: The Cypher query string
         :param parameters: A dictionary of query parameters (optional)
         :param database: The name of the database to query (default is "neo4j")
         :return: A list of dictionaries containing the query results
         """
         try:
             with self.driver.session(database=database) as session:
-                result = session.run(query, parameters)
+                result = session.run(cypher_query, parameters)
                 return [record.data() for record in result]
         except Exception as e:
             log = traceback.format_exc()
