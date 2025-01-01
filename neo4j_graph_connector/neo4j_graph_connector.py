@@ -99,24 +99,49 @@ class Neo4jConnector(object):
             self.logger.error(log)
             raise e
 
-    def execute_cypher_query(
+    def execute_cypher_query_with_pagination(
         self,
         cypher_query: str,
         parameters: Optional[Dict[str, Any]] = None,
         database: str = "neo4j",
-    ) -> List[Dict[str, Any]]:
+        limit: int = 100,
+        skip: int = 0,
+        get_total: bool = False,
+    ) -> Dict[str, Any]:
         """
-        Executes a Cypher query on the specified database and returns the results.
+        Executes a Cypher query with pagination on the specified database and optionally returns the total number of results.
 
         :param cypher_query: The Cypher query string
         :param parameters: A dictionary of query parameters (optional)
         :param database: The name of the database to query (default is "neo4j")
-        :return: A list of dictionaries containing the query results
+        :param limit: The maximum number of records to fetch per page (default is 100)
+        :param skip: The number of records to skip (default is 0)
+        :param get_total: Whether to retrieve the total number of results (default is False)
+        :return: A dictionary containing the paginated results and total count (if requested)
         """
         try:
+            results = []
+            total = None
+
+            if get_total:
+                # Modify the query to get the total count
+                count_query = (
+                    "CALL (*) { " f"{cypher_query} " "} RETURN count(*) as total"
+                )
+                with self.driver.session(database=database) as session:
+                    total_result = session.run(count_query, parameters or {})
+                    total = total_result.single()["total"]
+
+            # Add pagination clauses to the query
+            paginated_query = f"{cypher_query} SKIP $skip LIMIT $limit"
+            paginated_parameters = parameters or {}
+            paginated_parameters.update({"skip": skip, "limit": limit})
+
             with self.driver.session(database=database) as session:
-                result = session.run(cypher_query, parameters)
-                return [record.data() for record in result]
+                result = session.run(paginated_query, paginated_parameters)
+                results = [record.data() for record in result]
+
+            return total, results
         except Exception as e:
             log = traceback.format_exc()
             self.logger.error(log)
