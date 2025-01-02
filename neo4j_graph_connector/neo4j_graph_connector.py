@@ -132,13 +132,16 @@ class Neo4jConnector(object):
                     total_result = session.run(count_query, parameters or {})
                     total = total_result.single()["total"]
 
+            _parameters = parameters or {}
             # Add pagination clauses to the query
-            paginated_query = f"{cypher_query} SKIP $skip LIMIT $limit"
-            paginated_parameters = parameters or {}
-            paginated_parameters.update({"skip": skip, "limit": limit})
+            if "LIMIT" in cypher_query.upper() or "SKIP" in cypher_query.upper():
+                _cypher_query = cypher_query
+            else:
+                _cypher_query = f"{cypher_query} SKIP $skip LIMIT $limit"
+                _parameters.update({"skip": skip, "limit": limit})
 
             with self.driver.session(database=database) as session:
-                result = session.run(paginated_query, paginated_parameters)
+                result = session.run(_cypher_query, _parameters)
                 results = [record.data() for record in result]
 
             return total, results
