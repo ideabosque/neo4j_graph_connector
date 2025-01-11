@@ -147,7 +147,7 @@ class Neo4jConnector(object):
                     {
                         key: (
                             (
-                                str(value.to_native())
+                                value.to_native().isoformat()
                                 if isinstance(
                                     value.to_native(),
                                     (datetime.date, datetime.datetime),
