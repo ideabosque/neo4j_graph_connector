@@ -4,6 +4,7 @@ from __future__ import print_function
 
 __author__ = "bibow"
 
+import datetime
 import logging
 import traceback
 from typing import Any, Dict, List, Optional
@@ -142,7 +143,24 @@ class Neo4jConnector(object):
 
             with self.driver.session(database=database) as session:
                 result = session.run(_cypher_query, _parameters)
-                results = [record.data() for record in result]
+                results = [
+                    {
+                        key: (
+                            (
+                                str(value.to_native())
+                                if isinstance(
+                                    value.to_native(),
+                                    (datetime.date, datetime.datetime),
+                                )
+                                else value.to_native()
+                            )
+                            if hasattr(value, "to_native")
+                            else value
+                        )
+                        for key, value in record.data().items()
+                    }
+                    for record in result
+                ]
 
             return total, results
         except Exception as e:
