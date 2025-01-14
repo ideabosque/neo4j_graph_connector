@@ -7,7 +7,7 @@ __author__ = "bibow"
 import datetime
 import logging
 import traceback
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from neo4j import GraphDatabase
 
@@ -108,7 +108,7 @@ class Neo4jConnector(object):
         limit: int = 100,
         skip: int = 0,
         get_total: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> Tuple[int, List[Dict[str, Any]]]:
         """
         Executes a Cypher query with pagination on the specified database and optionally returns the total number of results.
 
