@@ -19,6 +19,7 @@ class Neo4jConnector(object):
             setting["neo4j_uri"],
             auth=(setting["neo4j_username"], setting["neo4j_password"]),
         )
+        self.database = setting.get("neo4j_database", "neo4j")
 
     def close(self):
         if self.driver:
@@ -32,7 +33,7 @@ class Neo4jConnector(object):
     def driver(self, driver: object) -> object:
         self._driver = driver
 
-    def get_graph_schema(self, database: str = "neo4j") -> Dict[str, Any]:
+    def get_graph_schema(self) -> Dict[str, Any]:
         """
         Generates the schema in the specified format, including:
         - Entities with attributes and relations
@@ -42,7 +43,7 @@ class Neo4jConnector(object):
         """
         schema = {"entities": {}, "relations": {}}
         try:
-            with self.driver.session(database=database) as session:
+            with self.driver.session(database=self.database) as session:
                 # Get all labels and their properties
                 labels_query = """
                     MATCH (n)
@@ -104,7 +105,6 @@ class Neo4jConnector(object):
         self,
         cypher_query: str,
         parameters: Optional[Dict[str, Any]] = None,
-        database: str = "neo4j",
         limit: int = 100,
         skip: int = 0,
         get_total: bool = False,
@@ -129,7 +129,7 @@ class Neo4jConnector(object):
                 count_query = (
                     "CALL (*) { " f"{cypher_query} " "} RETURN count(*) as total"
                 )
-                with self.driver.session(database=database) as session:
+                with self.driver.session(database=self.database) as session:
                     total_result = session.run(count_query, parameters or {})
                     total = total_result.single()["total"]
 
@@ -141,7 +141,7 @@ class Neo4jConnector(object):
                 _cypher_query = f"{cypher_query} SKIP $skip LIMIT $limit"
                 _parameters.update({"skip": skip, "limit": limit})
 
-            with self.driver.session(database=database) as session:
+            with self.driver.session(database=self.database) as session:
                 result = session.run(_cypher_query, _parameters)
                 results = [
                     {
