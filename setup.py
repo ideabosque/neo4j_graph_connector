@@ -15,7 +15,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     platforms="Linux",
-    install_requires=[],
+    install_requires=["neo4j"],
     classifiers=[
         "Programming Language :: Python",
         "Environment :: Web Environment",
